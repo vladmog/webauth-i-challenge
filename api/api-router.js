@@ -53,14 +53,38 @@ const db = require('./api-model');
     // If the user is logged in, respond with an array of all the users contained in the database. If the user is not logged in repond with the 
     // correct status code and the message: 'You shall not pass!'.
     
-    router.get('/users', (req, res) => {
+    router.get('/users', restricted, (req, res) => {
         db.find()
             .then((response) => {
                 res.status(200).json(response)
             })
             .catch(() => {
-    
+                res.status(500).json({ message: "doh" })
             })
     })
+
+
+    function restricted(req, res, next) {
+        // we'll read the username and password from headers
+        // the client is responsible for setting those headers
+        const { username, password } = req.headers;
+      
+        // no point on querying the database if the headers are not present
+        if (username && password) {
+          db.findByUsername(username)
+            .then(user => {
+              if (user && bcrypt.compareSync(password, user.password)) {
+                next();
+              } else {
+                res.status(401).json({ message: 'Invalid Credentials' });
+              }
+            })
+            .catch(error => {
+              res.status(500).json({ message: 'Unexpected error' });
+            });
+        } else {
+          res.status(400).json({ message: 'No credentials provided' });
+        }
+      }
 
 module.exports = router;
