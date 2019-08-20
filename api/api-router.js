@@ -30,6 +30,22 @@ const db = require('./api-model');
     // Use the credentials sent inside the body to authenticate the user. On successful login, create a new session for the user 
     // and send back a 'Logged in' message and a cookie that contains the user id. If login fails, respond with the correct status code 
     // and the message: 'You shall not pass!'
+
+    router.post('/login', (req, res) => {
+        const credentials = req.body;
+        db.findByUsername(credentials.username)
+            .then((user) => {
+                if (!user || !bcrypt.compareSync(credentials.password, user.password)) {
+                    return res.status(401).json({ error: 'You shall not pass!' });
+                } else {
+                    return res.status(200).json(user)
+                }
+            })
+            .catch(() => {
+                res.status(500).json({ message: doh })
+            })
+        
+    })
     
     
     // GET	/api/users
